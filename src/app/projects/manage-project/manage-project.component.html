@@ -1,0 +1,13 @@
+<div class="container bg-white wiz p-5 col">
+    <div class="wiz-title mb-30">
+        <button type="button" (click)="cancel($event)" class="btn-medium rounded mr-3 tt ttb" tooltip="Cancel">
+            <span class="material-icons">close</span>
+        </button>
+        <span class="fx-g fx-cent-vert px-5">Create Project</span> 
+        <button type="button" (click)="manage($event)" class="btn-medium rounded mr-3 tt ttb" tooltip="Save">
+            <span class="material-icons">checklist</span>
+        </button>
+    </div>
+    <input class="mb-20" type="text" placeholder="Name" name="name" [(ngModel)]="project && project.name"> 
+    <input type="text" placeholder="Description" name="des" [(ngModel)]="project && project.des"> 
+</div>  

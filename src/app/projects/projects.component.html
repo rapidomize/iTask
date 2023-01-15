@@ -1,0 +1,23 @@
+<div class="container p-10">
+    <div class="row">
+        <input type="text" placeholder="Filter" name="search" [(ngModel)]="filterValue" class="mr-20"> 
+        <button type="button" (click)="create($event)" class="btn-medium rounded">
+            <span class="material-icons">add</span>
+        </button>
+    </div>
+    <div class="cards">
+        <div *ngFor="let prj of projects" class="card p-10 raise m-5">
+            <div class="row">
+                <span class="fx-g"></span>
+                <span (click)="edit($event, prj)" class="btn-icon material-icons primary mr-3">edit</span>
+                <span (click)="remove($event, prj)" class="btn-icon material-icons primary">delete</span>
+            </div>
+            <div class="card-body">
+                <div class="mb-1" style="overflow-wrap: break-word;">{{prj.name}}</div>
+                <div class="mb-1" style="font-size: 14px;">{{prj.updated | date:'MMM d, y, h:mm a'}}</div>
+                <div class="mb-1" style="overflow: auto;overflow-wrap: break-word;">{{prj.des}}</div>
+                <div class="mb-1" style="display: block;font-size: 14px;">{{prj.id}}</div>
+            </div>
+        </div>
+    </div>
+</div>

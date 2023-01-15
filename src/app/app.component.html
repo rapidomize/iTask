@@ -1,0 +1,24 @@
+<div class="toolbar row fx-cent-vert px-20">
+    <span (click)="toggle()" class="material-icons text-body mr-20" style="cursor: pointer;">menu</span>
+    <img src="assets/logo.png" alt="logo" style="height: 45px;">  
+    <span class="fx-g"></span>
+    <span class="material-icons text-body" style="cursor: pointer;">person</span>
+</div>
+<!-- 
+    <ul class="dropdown-menu text-small shadow" aria-labelledby="dropdownUser2">
+          <li><a class="dropdown-item" href="#">App Tokens</a></li>
+          <li><hr class="dropdown-divider"></li>
+          <li><a class="dropdown-item" href="#">Log out</a></li>  
+    </ul>
+ -->
+ 
+<div class="row">
+    <div #nav class="sidenav" [ngStyle]="width">
+        <a routerLink="/projects" class="py-3" title="Pojects" >
+            <span class="material-icons text-body">checklist</span>
+        </a>
+    </div>
+    <div class="detail bg-dark">
+        <router-outlet></router-outlet>
+    </div>
+</div>

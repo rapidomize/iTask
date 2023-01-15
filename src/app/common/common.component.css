@@ -1,0 +1,26 @@
+.alert {
+    padding: 20px;
+    color: white;
+    opacity: 1;
+    transition: opacity 0.6s;
+    margin-bottom: 15px;
+}
+  
+.alert.success {background-color: var(--rpz-success);}
+.alert.info {background-color: var(--rpz-info);}
+.alert.warn {background-color: var(--rpz-warning);}
+.alert.err {background-color: var(--rpz-danger);}
+
+.chips{
+    display: flex;
+    width: fit-content;
+    padding: 0.375rem 0rem;
+}
+
+.chip{
+    border-radius: var(--rpz-border-radius2);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 18px;
+    white-space: nowrap;
+}

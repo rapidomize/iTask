@@ -1,0 +1,7 @@
+.container{
+  overflow-x: scroll;
+}
+
+.list{
+  max-width: var(--rpz-card-w);
+}
