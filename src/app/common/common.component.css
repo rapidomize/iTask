@@ -24,3 +24,34 @@
     line-height: 18px;
     white-space: nowrap;
 }
+
+/* .ql-container{
+  height: unset;
+} */
+/* 
+.editable .ql-container:hover{
+    background-image: url('/assets/app/edit.svg'); 
+    background-position: right center;
+    background-repeat: no-repeat;
+  }
+  
+  .brd-item .ql-container{
+    border: 1px solid rgb(0, 0, 0, 0);
+    border-radius: var(--rpz-border-radius);
+  }
+  
+  .brd-item .ql-container:hover {
+    border: 1px solid var(--rpz-gray-200);
+  }
+  
+  .highlight .ql-container:hover {
+    background-color: var(--rpz-gray-100);
+  }
+  
+  .highlight2 .ql-container:hover {
+    background-color: var(--rpz-gray-200);
+  }
+  
+  .highlight3 .ql-container:hover {
+    background-color: var(--rpz-gray-300);
+  } */

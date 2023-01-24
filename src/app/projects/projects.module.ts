@@ -7,8 +7,8 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { QuillModule } from 'ngx-quill';
 import { RpzCommonModule } from '../common/rpz-common.module';
 import { TasksComponent } from './tasks/tasks.component';
-import { ManageProjectComponent } from './manage-project/manage-project.component';
-import { QUIL_MODULES } from '../app.module';
+import { ManageProjectComponent } from './manage/manage-project.component';
+import { QUILL_MODULES } from '../app.module';
 
 
 @NgModule({
@@ -24,7 +24,7 @@ import { QUIL_MODULES } from '../app.module';
     ReactiveFormsModule,
     RpzCommonModule,
 
-    QuillModule.forRoot()
+    QuillModule
   ]
 })
 export class ProjectsModule { }

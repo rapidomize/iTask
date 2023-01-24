@@ -12,10 +12,8 @@
  *
  */
 
-import { BehaviorSubject } from 'rxjs/internal/BehaviorSubject';
 import { Injectable } from '@angular/core';
 import { v4 as uuidv4 } from 'uuid';
-import { Observable } from 'rxjs/internal/Observable';
 
 const alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 const alphaLen = alpha.length;
@@ -36,22 +34,4 @@ export class IdGen{
         }
         return ret;
     }
-}
-
-
-@Injectable({
-  providedIn: 'root'
-})
-export class Context {
-
-  private data = new BehaviorSubject(null);
-  constructor() { }
-
-  put(data: any) {
-    this.data.next(data)
-  }
-
-  get(): Observable<any>{
-    return this.data.asObservable();
-  }
 }

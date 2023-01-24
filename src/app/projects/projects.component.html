@@ -1,23 +1,71 @@
 <div class="container p-10">
-    <div class="row">
+    <div class="row mb-10">
         <input type="text" placeholder="Filter" name="search" [(ngModel)]="filterValue" class="mr-20"> 
+        <button type="button" (click)="table=false" class="btn-medium rounded mr-5">
+            <span class="material-icons">view_module</span>
+        </button>
+        <button type="button" (click)="table=true" class="btn-medium rounded mr-5">
+            <span class="material-icons">list</span>
+        </button>
         <button type="button" (click)="create($event)" class="btn-medium rounded">
             <span class="material-icons">add</span>
         </button>
     </div>
-    <div class="cards">
-        <div *ngFor="let prj of projects" class="card p-10 raise m-5">
+    <!-- <div class="row my-5">
+        <span class="spacer"></span>
+    </div> -->
+    <div *ngIf="!table;" class="cards g-10x">
+        <div *ngFor="let prj of projects" class="card p-10 raise pointer" (dblclick)="edit($event, prj)">
             <div class="row">
-                <span class="fx-g"></span>
-                <span (click)="edit($event, prj)" class="btn-icon material-icons primary mr-3">edit</span>
+                <span class="spacer"></span>
+                <span (click)="edit($event, prj)" class="btn-icon material-icons primary mr-3">visibility</span>
+                <span (click)="settings($event, prj)" class="btn-icon material-icons primary mr-3">settings</span>
                 <span (click)="remove($event, prj)" class="btn-icon material-icons primary">delete</span>
             </div>
             <div class="card-body">
                 <div class="mb-1" style="overflow-wrap: break-word;">{{prj.name}}</div>
                 <div class="mb-1" style="font-size: 14px;">{{prj.updated | date:'MMM d, y, h:mm a'}}</div>
                 <div class="mb-1" style="overflow: auto;overflow-wrap: break-word;">{{prj.des}}</div>
-                <div class="mb-1" style="display: block;font-size: 14px;">{{prj.id}}</div>
+                <!-- <div class="mb-1" style="display: block;font-size: 14px;">{{prj.id}}</div> -->
             </div>
         </div>
     </div>
+    <table *ngIf="table" class="table">
+        <tr class="header">
+            <th *ngFor="let header of headers" class="txt-l px-5 py-10">{{header}}</th>
+            <th class="txt-l w-100p p-5 py-10">Actions</th>
+        </tr>
+        <tr *ngFor="let prj of projects; let idx=index;" [class]="idx%2!=0?'bg-gray':''">
+            <td *ngFor="let fv of fvs(prj, headers)" class="px-5">{{fv}}</td>
+            <td class="px-5">
+                <span (click)="edit($event, prj)" class="btn-icon material-icons primary mr-5">visibility</span>
+                <span (click)="settings($event, prj)" class="btn-icon material-icons primary mr-5">settings</span>
+                <span (click)="remove($event, prj)" class="btn-icon material-icons primary">delete</span>
+            </td>
+        </tr>
+    </table>
 </div>
+<drawer #drawer class="grd py-10">
+    <ng-container *ngIf="project">
+        <div class="wiz-title mb-20">
+            <button type="button" (click)="drawer.close()" class="btn-medium rounded mr-3">
+                <span class="material-icons">close</span>
+            </button>
+            <span class="fx-g fx-cent-vert px-5">Project Settings</span> 
+            <span class="fx-g"></span>
+            <button type="button" (click)="update($event)" class="btn-medium rounded mr-3">
+                <span class="material-icons">save</span>
+            </button>
+        </div>
+        <input type="text" placeholder="Name" name="name" [(ngModel)]="project && project.name" required #name="ngModel"> 
+        <err-msg [ref]="name" msg="Name is required"></err-msg>
+        <textarea type="text" placeholder="Description" name="des" [(ngModel)]="project && project.des" class="mt-20"></textarea> 
+    </ng-container>
+</drawer>
+<adialog #dialog style="width:300px;height: 100px; border:0">
+    <div class="row mt-30">
+        <span class="fx-g"></span>
+        <button class="btn-size mr-10" (click)="dialog.cancel()">Cancel</button>
+        <button class="btn-size" (click)="dialog.done('OK')">OK</button>
+    </div>
+</adialog>

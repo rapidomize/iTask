@@ -1,43 +1,85 @@
+import { HttpClient } from '@angular/common/http';
 import { Component, OnInit, ViewChild } from '@angular/core';
-import { QUIL_MODULES } from 'src/app/app.module';
-import { DialogComponent, Drawer } from '../../common/common.component';
-import { IdGen } from '../../common/common.service';
-import { TaskService, Task, TaskList, Label } from './task.service';
+import { ActivatedRoute, Router } from '@angular/router';
+import { QUILL_MODULES } from 'src/app/app.module';
+import { Context } from 'src/app/common/context.service';
+import { HttpService } from 'src/app/common/http.service';
+import { CommonComponent, DialogComponent, Drawer } from '../../common/common.component';
+import { Project, PROJECTS_EP, Task, Status, Comment, Label, TASK_EP } from '../project';
 
 @Component({
   selector: 'app-tasks',
   templateUrl: './tasks.component.html',
   styleUrls: ['./tasks.component.css']
 })
-export class TasksComponent implements OnInit {
+export class TasksComponent extends CommonComponent implements OnInit {
 
   @ViewChild('drawer') drawer!: Drawer;
   @ViewChild('dialog') dialog!: DialogComponent;
   comment!: string;
-  qmodules = QUIL_MODULES;
+  qmodules = QUILL_MODULES;
   
-  lists: TaskList [] = [ new TaskList('To Do'), new TaskList('In Progress'), new TaskList('Done')];
-  tasks: Task [] = [
-    new Task('t1 t1', 'To Do'), 
-    new Task('t2 t2', 'To Do'), 
-    new Task('t3 t3', 'To Do'), 
-    new Task('t4 t4', 'To Do'), 
-  ];
-
+  tasks!: Task [];
   task!: Task;
-  labels: Label [] = [
-    {name: 'tag1', color:'green'}, 
-    {name: 'tag2', color:'#ff0000'}, 
-    {name: 'tag3', color:'#00ff00'}, 
-    {name: 'tag4', color:'#0000ff'}, 
-  ];
 
-  lcnt: number = this.lists.length + 1;
-  tcnt: number = this.tasks.length + 1;
+  headers: string [] = ['Name', 'Description', 'Status', 'Labels/Attachments/Comments'];
+  table: boolean = false;
 
-  constructor(private taskService: TaskService) { }
+  lcnt: number = 1;
+  tcnt: number = 1;
+  canDrag = true;
+
+  project!: Project;
+  prjService: HttpService<Project>
+
+  constructor(protected override ctx: Context, protected http: HttpClient, protected override router: Router,
+              private route: ActivatedRoute) {
+    super(ctx, router);
+    this.prjService = new HttpService<Project>(http, PROJECTS_EP);
+    this.path = '/projects/mgt';
+  }
 
   ngOnInit(): void {
+    let id = this.route.snapshot.params['id'];
+    console.log('id', id);    
+    if(id){ 
+      this.prjService.read(id).subscribe({
+          next: (project: Project) => {
+            this.project = project;
+            console.log(project);
+            this.init();
+          },
+          error: error => console.log(error)
+      });
+    }else
+      console.log('error');      
+  }
+
+  init(){
+    this.service = new HttpService<Task>(this.http, `${TASK_EP}/${this.project.id}/task`);//this.project.id+':task',
+    this.service.find(`project=${this.project.id}`).subscribe({
+        next: (tasks: Task []) => {
+          console.log('init', tasks);
+          this.tasks = tasks?tasks: [];
+          this.lcnt = this.statuses?.length + 1;
+          this.tcnt = this.tasks?.length + 1;
+          this.show();
+        },
+        error: error => console.log(error)
+    })
+  }
+
+  get statuses(){
+    return this.project?.statuses;
+  }
+ 
+  get labels(){
+    return this.project?.labels;
+  }
+  
+  lstName(idx:any){
+    // console.log('status', idx, this.statuses[idx]);
+    return this.project?.statuses.find(status => status.id == idx)?.name;
   }
 
   onDrag(ev:any, tid: string){
@@ -55,14 +97,14 @@ export class TasksComponent implements OnInit {
   onDrop(ev: any) {
     console.log("onDrop", ev, ev.target.id, ev.target.className);
     if(ev.preventDefault) ev.preventDefault();
-    let targetLst: any = ev.target;
+    let target: any = ev.target;
     let toTask!: Task;
-    while(targetLst.className?.indexOf('list') < 0){
-      if(targetLst.className?.indexOf('task') >= 0) toTask = targetLst;
-      targetLst = targetLst.parentElement;
-      console.info(targetLst);
+    while(target.className?.indexOf('list') < 0){
+      if(target.className?.indexOf('task') >= 0) toTask = target;
+      target = target.parentElement;
+      console.info(target);
     }
-    let tolst = this.lists.find(lst => lst.name == targetLst.id);
+    let tolst: Status | undefined = this.statuses.find(status => status.id == target.id);
     if(!tolst) return;
     // console.info(ev);
     let tid: string;
@@ -71,28 +113,33 @@ export class TasksComponent implements OnInit {
     else
       tid = ev.dataTransfer.getData('tid');
     console.log("onDrop", tid, ' => ', tolst, toTask?.id);
+
     let idx = this.tasks.findIndex(t => t.id == tid);
     if(idx >= 0) {
       let task = this.tasks[idx];
-      if(task.status == tolst.name && toTask && toTask.id != task.id){//same list
+      if(task.status == tolst.id && toTask && toTask.id != task.id){//same list
         console.log("move", tid, task);
         this.tasks.splice(idx, 1);
         idx = this.tasks.findIndex(t => t.id == toTask?.id);
         if(idx >= 0)
           this.tasks.splice(idx, 0, task);
-      }else 
-        task.status = tolst.name;
+      }else {
+        task.status = tolst.id;
+        this.service.update(task).subscribe(ret => console.log(ret));
+      }
     }
 
     for(let i=0;i<this.tasks.length; i++){
-      let t = this.tasks[i];
-      if(t.id == tid) {
-        if(tolst.name == toTask?.status){
-          console.log("move", tid, t);
+      let task = this.tasks[i];
+      if(task.id == tid) {
+        if(tolst.id == toTask?.status){
+          console.log("move", tid, task);
           this.tasks.splice(i, 0, toTask);
-        }else
-          t.status = tolst.name;
-        console.log("onDrop", tid, t);
+        }else{
+          task.status = tolst.id;
+          this.service.update(task).subscribe(ret => console.log(ret));
+        }
+        console.log("onDrop", tid, task);
         break;
       }
     }
@@ -102,39 +149,24 @@ export class TasksComponent implements OnInit {
     if(ev.preventDefault) ev.preventDefault();
   }
 
-  editable: any = {};
-  isEditable(idx: any){
-    return this.editable[idx]?this.editable[idx]: false;
+  onEditState(ev: any){
+    console.log('canDrag', ev);    
+    this.canDrag = !ev;
   }
 
-  makeEditable(ev: MouseEvent, idx: any){
-    console.log('makeEditable', idx);
-    if(ev.preventDefault) ev.preventDefault();
+  updateProject(ev:any, item: any){
+    console.log('updateProject', ev, item, typeof item);
     if(ev.stopPropagation) ev.stopPropagation();
-    this.editable[idx] = true;
+    this.prjService.update(this.project).subscribe(ret => this.show(ev));
   }
 
-  editName(ev:any, item: any){
-    console.log('editName', ev, item, item instanceof TaskList);
-    if(ev.preventDefault) ev.preventDefault();
+  updateTask(ev:any, task:Task){
+    console.log('updateTask', ev, task);
     if(ev.stopPropagation) ev.stopPropagation();
-    this.editable[item.name] = false;
-    const prev = item.name;
-    item.name = ev.value;
-    if(item instanceof TaskList){
-      this.tasks.map(t => t.status = t.status == prev? item.name: t.status);
-    }
-    this.show(ev);
+    this.createOrUpdateTask(task);
   }
 
-  editDetail(ev:any, task: Task){
-    // console.log('editDetail', ev, ev.target.innerText);
-    if(ev.preventDefault) ev.preventDefault();
-    this.editable[task.id] = false;
-    this.show(ev);
-  }
-
-  edit(ev:any, task:Task){
+  onEditTask(ev:any, task:Task){
     this.comment = '';
     if(ev.stopPropagation) ev.stopPropagation();
     this.task = task;
@@ -142,45 +174,99 @@ export class TasksComponent implements OnInit {
         this.drawer.open();  
   }
 
-  remove(ev:any, task:Task){
+  rmTask(ev:any, task:Task){
     if(ev.stopPropagation) ev.stopPropagation();
-    let idx = this.tasks.findIndex(t => t.id == task.id);
-    if(idx >= 0)
-      this.tasks.splice(idx, 1);
-  }
-
-  rm(ev:any, lst:TaskList){
-    if(ev.stopPropagation) ev.stopPropagation();
-    let idx = this.lists.findIndex(l => l.name == lst.name);
-    if(idx >= 0){
-
-      this.lists.splice(idx, 1);
-    }
+    this.dialog.show(DialogComponent.QUESTION, `Delete Task '${task.name}'?`, task);
+    this.dialog.onClose().subscribe(ret => {
+      if(ret){
+        //console.log('done', ret);        
+        let idx = this.tasks.findIndex(t => t.id == task.id);
+        if(idx >= 0){
+          this.service.delete(task.id).subscribe(ret => this.tasks.splice(idx, 1));
+        }
+      }
+    });
   }
 
   addComment(ev:any){
-    this.comment = '';
     console.log('addComment', ev);  
     if(!this.task.comments) this.task.comments = [];
-    this.task.comments.push({des: ev.value, by:''});  
+    this.task.comments.push(new Comment(ev, ''));  
+    this.comment = '';
+    this.createOrUpdateTask(this.task);
   }
 
   rmComment(idx: number){
     this.task.comments.splice(idx, 1);
+    this.createOrUpdateTask(this.task);
   }
 
-  add(ev: any, lst: TaskList){
+  addTask(ev: any, status?: Status){
     if(ev.stopPropagation) ev.stopPropagation();
-    this.tasks.push(new Task(`Untitled-${this.tcnt++}`, lst.name));
+    if(ev.preventDefault) ev.preventDefault();
+    let stId: any = status? status.id: '';
+    const task = new Task(`Untitled-${this.tcnt++}`, stId, this.project.id);
+    console.log('add', task);
+    //just create a dummy one
+    if(!status) {
+      this.onEditTask(ev, task);
+      return;
+    }
+    this.createOrUpdateTask(task);
+  }
+
+  createOrUpdateTask(task: Task){
+    if(!task.state){
+      this.service.create(task).subscribe(ret =>{
+        console.log('add', ret);     
+        this.service.read(ret.id).subscribe({
+            next: (task: Task) => {
+              console.log('add', task);
+              this.tasks.push(task);
+              if(this.drawer?.isOpened()) this.task = task;
+            },
+            error: error => console.log(error)
+        });
+      });
+    }else
+      this.service.update(task).subscribe({
+          next: (task: Task) => {
+            console.log('update', task);
+            for(let i=0; i < this.tasks.length; i++){
+              if(task.id == this.tasks[i].id){
+                this.tasks[i] = task;
+                break;
+              }
+            }
+          },
+          error: error => console.log(error)
+      }
+      );
   }
 
   addLst(ev:any){
     if(ev.stopPropagation) ev.stopPropagation();
-    this.lists.push(new TaskList(`Untitled-${this.lcnt++}`));
+    this.statuses.push(new Status(`Untitled-${this.lcnt++}`));
+    this.prjService.update(this.project).subscribe(ret => this.show(ev));
   }
 
-  show(ev: any){
-    console.log('lists', this.lists);
+  //FIXME: removing list must remove or move all the task to another list
+  rmLst(ev: any, status: Status){
+    this.dialog.show(DialogComponent.QUESTION, `Delete Task List '${status.name}'?`, status);
+    this.dialog.onClose().subscribe(ret => {
+      if(ret){
+        //console.log('done', ret);        
+        let idx = this.statuses.findIndex(l => l.id == status.id);
+        if(idx >= 0){
+          this.statuses.splice(idx, 1);
+          this.prjService.update(this.project).subscribe(ret => this.show(ev));
+        }
+      }
+    });
+  }
+
+  show(ev?: any){
+    console.log('statuses', this.statuses);
     console.log('tasks', this.tasks);
   }
 
@@ -190,52 +276,9 @@ export class TasksComponent implements OnInit {
       this.drawer.close();
   }
 
-  deleteLst(ev: any, lst: TaskList){
-    this.dialog.show(DialogComponent.QUESTION, `Delete Task List '${lst.name}'?`, lst);
-    this.dialog.onClose().subscribe(ret => {
-      if(ret){
-        console.log('done', ret);        
-        this.rm(ev, lst);
-      }
-    });
-  }
-
   tagInput(ev:any){
     console.log('tagInput', ev);
     if(ev.preventDefault) ev.preventDefault();
     if(ev.stopPropagation) ev.stopPropagation();
   }
 }
-
-/*
-    if(ev.type == 'dblclick') { // instanceof MouseEvent){
-      console.log('lstEdit', ev.target.id)
-      ev.target.contenteditable='true';
-    }else if(ev.type == 'blur'){
-      console.log('lstEdit-blur', ev.target.id)
-      ev.target.contenteditable='false';
-    }
-*/
-
-/*
-editName(ev:any, item: any){
-    console.log('lstEdit', ev, ev.target.innerText);
-    if(ev.preventDefault) ev.preventDefault();
-    this.editable = false;
-    item.name = ev.target.innerText;
-    this.show(ev);
-  }
-
-  edit(ev:any, task:Task){
-
-  }
-
-  remove(ev:any, task:Task){
-
-  }
-
-  show(ev: any){
-    console.log('lists', this.lists);
-    console.log('tasks', this.tasks);
-  }
-  */

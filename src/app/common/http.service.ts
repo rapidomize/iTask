@@ -9,15 +9,16 @@ const httpOptions = {
 
 @Injectable()
 export class HttpService<T> {
-  constructor(private http: HttpClient, @Inject(String) private apiEndpoint:string) { }
+  constructor(protected http: HttpClient, @Inject(String) protected apiEndpoint:string) { }
 
   read(id: string, path?: string): Observable<T> {
-    return this.http.get<T>(`${this.apiEndpoint}${path!=null? `/${path}`:''}/${id}`) 
+    const uri = `${this.apiEndpoint}${path!=null?`/${path}`:''}/${id}`;
+    return this.http.get<T>(uri) 
     .pipe(
       retry(1), 
       catchError(this.handleError) 
     );
-  }
+  } 
 
   //just deligate
   create (entity: T|any, path?: string): Observable<any> {
@@ -25,8 +26,9 @@ export class HttpService<T> {
   }
 
   exec (entity: T|any, path?: string): Observable<any> {
-    // console.log(`${this.apiEndpoint}/${path!==undefined? path:''}`);
-    return this.http.post(`${this.apiEndpoint}${path? `/${path}`:''}`, entity, httpOptions)
+    const uri = `${this.apiEndpoint}${path? `/${path}`:''}`;
+    console.log('exec', uri);    
+    return this.http.post(uri, entity, httpOptions)
     .pipe(
       retry(1), 
       catchError(this.handleError) 
@@ -34,25 +36,29 @@ export class HttpService<T> {
   }
 
   find(query?:string, path?:string): Observable<T[]> {
-    let url = `${this.apiEndpoint}${path? `/${path}`:''}?${query}`;
-    return this.http.get<T[]>(this.apiEndpoint)
+    const uri = `${this.apiEndpoint}${path? `/${path}`:''}${query?`?${query}`:''}`;
+    console.log('find', uri);    
+    return this.http.get<T[]>(uri)
     .pipe(
       retry(1), 
       catchError(this.handleError) 
     );
   }
 
-  update (entity: T|any, path?: string): Observable<any> {
-    // console.log(`${this.apiEndpoint}/${path!==undefined? path:''}`);
-    return this.http.put(`${this.apiEndpoint}/${path!==undefined? path:''}`, entity, httpOptions)
+  update (entity: T|any, path?: string, query?:string): Observable<any> {
+    const uri = `${this.apiEndpoint}/${path? path: entity.id}`;
+    console.log('update', uri);    
+    return this.http.put(uri, entity, httpOptions)
     .pipe(
       retry(1), 
       catchError(this.handleError) 
     );
   }
 
-  delete(id: string, path?: string): Observable<T> {
-    return this.http.delete<T>(`${this.apiEndpoint}${path!=null? `/${path}`:''}/${id}`) 
+  delete(id: string, path?: string, query?:string): Observable<T> {
+    const uri = `${this.apiEndpoint}${path!=null? `/${path}`:''}/${id}${query?`${query?`?${query}`:''}`:''}`;
+    console.log('delete', uri);    
+    return this.http.delete<T>(uri) 
     .pipe(
       retry(1), 
       catchError(this.handleError) 

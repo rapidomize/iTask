@@ -1,15 +1,13 @@
-# TaskLink
-Open source, self-hosted project management tool that's an alternative to Trello. It allows you to track & manage your work.
+# Task Link
+Open source, self-hosted project management, kanban board tool that's an alternative to Trello. It allows you to track & manage your work.
 
 
 
 
 # Development
 
-Installation
-------------
-1) you must install node.js latest version 
-2) install angular cli globally.
+1) you must have latest version of node.js installed on your system.
+2) install angular cli globally
     ```
     $ npm install -g @angular/cli
     ```

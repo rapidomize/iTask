@@ -1,26 +1,24 @@
-import { Component, ElementRef, EventEmitter, Injectable, Input, OnChanges, OnInit, Output, SimpleChanges, ViewChild } from '@angular/core';
+import { Component, Directive, ElementRef, EventEmitter, Injectable, Input, OnChanges, OnInit, Output, SimpleChanges, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
-import Quill from 'quill';
 import { Observable, of } from 'rxjs';
-import { QUIL_MODULES } from '../app.module';
-import { Context } from './common.service';
+import { QUILL_MODULES } from '../app.module';
+import { Context } from './context.service';
+import { HttpService } from './http.service';
+import Quill from 'quill'
+/* import ImageResize from 'quill-image-resize-module';
+Quill.register('modules/imageResize', ImageResize) */
 
 
-@Component({
-  selector: 'app-common',
-  templateUrl: './common.component.html',
-  styleUrls: ['./common.component.css']
+@Directive({
+  selector: '[]'
 })
-export class CommonComponent implements OnInit {
+export class CommonComponent {
 
   alert = new Alert();
   protected path!: string;
-  protected service: any;
+  protected service!: HttpService<any>;
 
   constructor(protected ctx: Context, protected router: Router) { }
-
-  ngOnInit(): void {
-  }
 
   /* cancel(ev: any){
     ev.stopPropagation();
@@ -43,9 +41,9 @@ export class CommonComponent implements OnInit {
 
   remove(ev:any, item:any){
     if(this.service){
-      this.service.delete(item.id).subscribe({
+      this.service.delete(item.id, undefined, 'cascade=true').subscribe({
         next: (ret: any) => {
-          //console.log(icapps);
+          console.log(ret);
         },
         error: (error:any) => console.log(error)
       })    
@@ -53,6 +51,13 @@ export class CommonComponent implements OnInit {
   }
   //end - used with list components
 
+  fvs(obj: any, headers:any[]){
+    let fv: any [] = [];
+    for(let i=0; i < headers.length; i++){
+      fv.push(obj[headers[i].toLowerCase()])
+    }
+    return fv;
+  }
 }
 
 const SUCCESS='success';
@@ -192,7 +197,7 @@ export class ItemList {
 @Component({
   selector: 'chips',
   template: `
-  <div class="white row fx-wrap">
+  <div class="row fx-wrap">
       <div *ngFor="let chip of chips" class="chip py-0 pl-10 mr-2 mb-1" [ngClass]="allowRemove?'pr-5':'pr-10'" 
             [ngStyle]="{'background-color': chip.color?chip.color:'var(--rpz-gray-400)'}">
         {{name(chip)}}
@@ -213,8 +218,7 @@ export class ChipsComponent {
   }
 
   name(item: any){
-    console.log('chips',item);
-    
+    // console.log('chips',item);
     return item.name?item.name:item.value?item.value:item;
   }
 
@@ -226,12 +230,12 @@ export class ChipsComponent {
 @Component({
   selector: 'chip-select',
   template: `
-  <div class="chips white">
+  <div class="chips">
       <chips [chips]="chips" [allowRemove]="true" (onRemove)="rm($event)"></chips>
       <div class="dropdown">
         <span class="btn-icon material-icons primary">settings</span>
-        <div class="dropdown-content p-3 bg-dark">
-            <div *ngFor="let item of items" (click)="add(item)" class="brdr-2 py-0 px-10 mb-3" 
+        <div class="dropdown-content p-3 bg-gray">
+            <div *ngFor="let item of list" (click)="add(item)" class="brdr-2 py-0 px-10 mb-3" 
               [ngStyle]="{'background-color': item.color}">{{name(item)}}</div>
         </div>
       </div>
@@ -239,16 +243,32 @@ export class ChipsComponent {
   `,
   styleUrls: ['./common.component.css']
 })
-export class ChipSelectComponent {
+export class ChipSelectComponent implements OnInit, OnChanges {
   @Input() chips!: any [];
   @Output() chipsChange = new EventEmitter<any>(); 
   @Input() items!: any [];
 
+  list!: any [];
+
+  ngOnInit(): void {
+    this.setLst();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void { 
+    this.setLst();    
+  }
+
+  setLst(){
+    if(this.chips)
+      this.list = this.items.filter(elm => this.chips.find(ch => ch.name == elm.name) == undefined);
+    else this.list = this.items
+  }
+
   add(ev:any){
     console.log('add', ev);    
     if(!this.chips) this.chips = [];
-    const idx = this.items.indexOf(ev);
-    this.items.splice(idx, 1);
+    const idx = this.list.indexOf(ev);
+    this.list.splice(idx, 1);
     this.chips.push(ev);
     this.chipsChange.emit(this.chips);
   }
@@ -256,7 +276,7 @@ export class ChipSelectComponent {
   rm(ev:any){
     const idx = this.chips.indexOf(ev);
     this.chips.splice(idx, 1);
-    this.items.push(ev);
+    this.list.push(ev);
     this.chipsChange.emit(this.chips);
   }
 
@@ -273,7 +293,7 @@ export class ChipSelectComponent {
   selector: 'file-select',
   template: `
   <div class="chips white">
-      <chips [chips]="attachments" [allowRemove]="true" (onRemove)="rm($event)"></chips>
+      <chips [chips]="files" [allowRemove]="true" (onRemove)="rm($event)"></chips>
       <input #dialog type="file" style="display: none;" (change)="attach()" name="attachements">
       <span class="btn-icon material-icons primary" (click)="open()">attach_file</span>
   </div>
@@ -281,8 +301,8 @@ export class ChipSelectComponent {
   styleUrls: ['./common.component.css']
 })
 export class FileSelectComponent {
-  @Input() attachments!: File [];
-  @Output() attachmentsChange = new EventEmitter<any>(); 
+  @Input() files!: any [];
+  @Output() filesChange = new EventEmitter<any>(); 
   @ViewChild('dialog') dialog!: ElementRef<HTMLInputElement>;  
 
   open(){
@@ -291,34 +311,38 @@ export class FileSelectComponent {
 
   attach(){
     console.log('attach', this.dialog.nativeElement.files);    
-    if(!this.attachments) this.attachments = [];
+    if(!this.files) this.files = [];
     const len = this.dialog.nativeElement.files?.length || 0;
     for(let i=0; i< len; i++){
       let f = this.dialog.nativeElement.files?.item(i);
-      if(f) this.attachments.push(f);
+      if(f) this.files.push({name: f.name, size:f.size});
     }
-    console.log('attach', this.attachments);
+    console.log('attach', this.files);
     
-    this.attachmentsChange.emit(this.attachments);
+    this.filesChange.emit(this.files);
   }
 
   rm(ev:any){
-    const idx = this.attachments.indexOf(ev);
-    this.attachments.splice(idx, 1);
-    this.attachmentsChange.emit(this.attachments);
+    const idx = this.files.indexOf(ev);
+    this.files.splice(idx, 1);
+    this.filesChange.emit(this.files);
   }
 }
 
+// data?cssClass:'hint '+cssClass
+/* <div *ngIf="!isEditable() && type=='editor'" [innerHtml]="data?data: '&nbsp;'" (dblclick)="enableEdit($event)" class="editable of-h" [ngClass]="cssClass"></div> --> */
 
 @Component({
   selector: 'ediv',
   template: `
-  <div  *ngIf="!isEditable()" (dblclick)="enableEdit($event)" class="editable p-5 of-h" 
-      [ngClass]="data?cssClass:'hint '+cssClass">{{data?data: placeholder}}&nbsp;</div>
+  <div  *ngIf="!isEditable() && type!='editor'" (dblclick)="enableEdit($event)" class="editable py-3 px-5 of-h" 
+      [ngClass]="cssClass">{{data?data: placeholder}}&nbsp;</div>
   <input *ngIf="isEditable() && type=='input'" type="text" [ngModel]="data" (blur)="edit($event)" name="data">
   <textarea *ngIf="isEditable() && type=='textarea'" type="text" [ngModel]="data" (blur)="edit($event)" name="data" class="of-h"></textarea>
-  <quill-editor *ngIf="isEditable() && type=='editor'" [(ngModel)]="data" (onBlur)="editEx($event)" [sanitize]="true" [modules]="qmodules"
-      name="data" [styles]="{height: '100px'}"></quill-editor>
+  <quill-view *ngIf="!isEditable() && type=='editor'" [content]="data" (dblclick)="enableEdit($event)" class="editable brdr" 
+      [ngClass]="cssClass"></quill-view>
+  <quill-editor *ngIf="isEditable() && type=='editor'" [(ngModel)]="data" (onBlur)="!toolbar && editEx($event)" 
+      [sanitize]="true" [modules]="toolbar?qmodules:noqmodules" name="data"></quill-editor>
   <div *ngIf="isEditable() && btn" class="row">
     <span  (click)="editEx($event)" class="btn-icon material-icons primary mr-3">save</span>
     <span (click)="disableEdit($event)" *ngIf="isEditable()" class="btn-icon material-icons primary">close</span>
@@ -331,23 +355,32 @@ export class EditableDivComponent implements OnInit, OnChanges {
   @Input() data!: string;
   @Output() dataChange = new EventEmitter<any>(); 
   @Input() type: string = 'input';  
+  @Input() toolbar: boolean = true;  
   @Input() cssClass!: string;
   @Input() placeholder!: string;
   @Input() btn!: boolean;
   @Output() onChange = new EventEmitter<any>(); 
+  @Output() onEditState = new EventEmitter<any>(); 
 
-  qmodules = QUIL_MODULES;
+  editable = false;
+  qmodules = QUILL_MODULES;
+  noqmodules = {toolbar: false};
+
+  basic_modules = {
+    imageResize: {},
+    syntax: true,
+    toolbar: [['formula'], ['image'], ['code-block']]
+  }
 
   ngOnInit(): void {
     // if(!this.placeholder) this.placeholder = this.type == 'editor'? '': ''; 
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    console.log('data', this.data);
-    
+    console.log('data', this.data, changes);
   }
 
-  editable = false;
+  
   isEditable(){
     return this.editable;
   }
@@ -357,6 +390,7 @@ export class EditableDivComponent implements OnInit, OnChanges {
     if(ev.preventDefault) ev.preventDefault();
     if(ev.stopPropagation) ev.stopPropagation();
     this.editable = true;
+    this.onEditState.emit(this.editable);
   }
 
   disableEdit(ev: MouseEvent){
@@ -364,13 +398,14 @@ export class EditableDivComponent implements OnInit, OnChanges {
     if(ev.preventDefault) ev.preventDefault();
     if(ev.stopPropagation) ev.stopPropagation();
     this.editable = false;
+    this.onEditState.emit(this.editable);
   }
 
   edit(ev:any){
     console.log('edit', ev, ev.target.value);
     if(ev.preventDefault) ev.preventDefault();
     if(ev.stopPropagation) ev.stopPropagation();
-    this.editable = false;
+    this.disableEdit(ev);
     this.onChange.emit({value: ev.target.value, old: this.data});
     // this.data = ev.target.value;
     this.dataChange.emit(ev.target.value);
@@ -384,7 +419,7 @@ export class EditableDivComponent implements OnInit, OnChanges {
     console.log('edit-getText', editor.getText()); */
     if(ev.preventDefault) ev.preventDefault();
     if(ev.stopPropagation) ev.stopPropagation();
-    this.editable = false;
+    this.disableEdit(ev);
     this.dataChange.emit(this.data);
     this.onChange.emit({value: this.data, old: this.data});
     //this.data = ev.editor.editor.delta.ops[0].insert;
@@ -441,5 +476,25 @@ export class DialogComponent {
     return new Observable((subscriber) => {
       this.subscriber = subscriber;
     });
+  }
+}
+
+@Component({
+  selector: 'err-msg',
+  template: `
+    <div class="hint invalid" *ngIf="hasErrors()">{{msg}}</div>
+  `,
+  styleUrls: ['./common.component.css']
+})
+export class ErrMsg {
+  @Input() ref:any;
+  @Input() msg!:string;
+
+  hasErrors(){
+    return ErrMsg.hasErrors(this.ref);
+  }
+
+  static hasErrors(ref: any){
+    return ref.invalid && (ref.dirty || ref.touched);
   }
 }

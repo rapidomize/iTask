@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { CommonComponent, Alert, ChipSelectComponent, Drawer, ItemList, ChipsComponent, EditableDivComponent, DialogComponent, FileSelectComponent } from './common.component';
+import { CommonComponent, Alert, ChipSelectComponent, Drawer, ItemList, ChipsComponent, EditableDivComponent, DialogComponent, FileSelectComponent, ErrMsg } from './common.component';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { QuillModule } from 'ngx-quill';
 
@@ -13,7 +13,8 @@ const RPZ_COMMON_COM=[
   ChipSelectComponent,
   EditableDivComponent,
   DialogComponent,
-  FileSelectComponent
+  FileSelectComponent,
+  ErrMsg
 ]
 
 @NgModule({
@@ -22,7 +23,7 @@ const RPZ_COMMON_COM=[
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
-    QuillModule.forRoot()
+    QuillModule
   ],
   exports: RPZ_COMMON_COM
 })

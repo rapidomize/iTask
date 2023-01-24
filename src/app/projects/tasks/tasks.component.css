@@ -1,7 +1,9 @@
 .container{
-  overflow-x: scroll;
+  overflow-x: auto;
 }
 
 .list{
   max-width: var(--rpz-card-w);
+  min-width: var(--rpz-card-w);
 }
+

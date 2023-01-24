@@ -1,17 +1,10 @@
-.toolbar{
-    position: fixed;
-    border-bottom: 1px solid #0000001f;
-    box-shadow: 0 1px 6px #39494c59;
-    -webkit-box-shadow: 0 1px 6px #39494c59;
-    height: var(--rpz-toolbar-h);
-}
-
 .detail{
     top: var(--rpz-toolbar-h);
     left: var( --rpz-sidenav-w);
-    position: absolute;
+    position: fixed;
     width: calc(100% - var( --rpz-sidenav-w));
     height: calc(100% - var(--rpz-toolbar-h));
+    z-index: 0;
 }
 
 /* overrides */
@@ -19,15 +12,4 @@
     z-index: 1;
 }
 
-.sidenav a {
-    display: block;
-    text-align: center;
-    /* padding: 10px 0px; */
-    transition: all 0.3s ease;
-    color: #3a3a3a;
-    font-size: 36px;
-}
 
-.sidenav a:hover {
-    background-color: #e0e0e0;
-}
