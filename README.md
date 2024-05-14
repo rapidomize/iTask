@@ -1,4 +1,4 @@
-# rTask
+# iTask
 Open source, self-hosted project management, kanban board tool that's an alternative to Trello. It allows you to track & manage your work.
 
 
